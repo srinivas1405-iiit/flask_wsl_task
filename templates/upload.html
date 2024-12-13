@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Upload</title>
+</head>
+<body>
+    <h1>Upload Excel File</h1>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xlsx">
+        <input type="submit" value="Upload">
+    </form>
+    
+    {% if validation_results %}
+        <h2>Validation Results</h2>
+        <p>Is Valid: {{ validation_results.is_valid }}</p>
+        <ul>
+            {% for error in validation_results.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>

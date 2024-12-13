@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import pandas as pd
 
 app = Flask(__name__)
 
-# defining the validation function
+# Defining the validation function
 def validate_excel(file_path):
     required_sheets = {
         "Course": ["Course ID", "Course Name"],
@@ -13,7 +13,7 @@ def validate_excel(file_path):
     }
     
     try:
-        #loading the excel file
+        # Loading the excel file
         excel_data = pd.ExcelFile(file_path)
         
         validation_results = {
@@ -21,7 +21,7 @@ def validate_excel(file_path):
             "errors": []
         }
         
-        #checking for required excel sheets in excel file
+        # Checking for required excel sheets in excel file
         for sheet_name, required_columns in required_sheets.items():
             if sheet_name not in excel_data.sheet_names:
                 validation_results["is_valid"] = False
@@ -29,13 +29,13 @@ def validate_excel(file_path):
             else:
                 sheet_df = pd.read_excel(file_path, sheet_name=sheet_name)
                 
-                #checking for required columns
+                # Checking for required columns
                 missing_columns = [col for col in required_columns if col not in sheet_df.columns]
                 if missing_columns:
                     validation_results["is_valid"] = False
                     validation_results["errors"].append(f"Missing columns in {sheet_name}: {', '.join(missing_columns)}")
                 
-                #checking for non-empty sheets
+                # Checking for non-empty sheets
                 if sheet_df.empty:
                     validation_results["is_valid"] = False
                     validation_results["errors"].append(f"Sheet {sheet_name} is empty")
@@ -48,24 +48,26 @@ def validate_excel(file_path):
             "errors": [str(e)]
         }
 
-#defining the route for file upload and validation
-@app.route('/upload', methods=['POST'])
+# Defining the route for file upload and validation
+@app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"is_valid": False, "errors": ["No file part"]})
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return render_template('upload.html', validation_results={"is_valid": False, "errors": ["No file part"]})
+        
+        file = request.files['file']
+        if file.filename == '':
+            return render_template('upload.html', validation_results={"is_valid": False, "errors": ["No selected file"]})
+        
+        file_path = f"C:/Users/91965/Downloads/{file.filename}"
+        file.save(file_path)
+        
+        # Validating the excel file
+        validation_results = validate_excel(file_path)
+        
+        return render_template('upload.html', validation_results=validation_results)
     
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"is_valid": False, "errors": ["No selected file"]})
-    
-   
-    file_path=f"C:/Users/91965/Downloads/Build_Course.xlsx"
-    file.save(file_path)
-    
-    #validating the excel file
-    validation_results = validate_excel(file_path)
-    
-    return jsonify(validation_results)
+    return render_template('upload.html', validation_results=None)
 
 if __name__ == '__main__':
     app.run(debug=True)
